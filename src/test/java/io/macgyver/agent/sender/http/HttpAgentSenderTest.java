@@ -53,7 +53,7 @@ public class HttpAgentSenderTest {
 		JsonNode n = mapper.readTree(rr.getBody().readUtf8());
 
 		Assertions.assertThat(n.has("host")).isTrue();
-		System.out.println(rr.getRequestLine());
+
 	}
 
 	@Test
@@ -110,7 +110,6 @@ public class HttpAgentSenderTest {
 
 		List<String> lines = new ArrayList<>();
 		while ((line = isr.readLine()) != null) {
-			System.out.println(line);
 			lines.add(line);
 		}
 

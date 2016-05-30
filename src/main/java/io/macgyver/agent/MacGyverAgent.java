@@ -7,8 +7,10 @@ import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
@@ -22,6 +24,7 @@ import java.util.zip.GZIPOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -48,9 +51,9 @@ public class MacGyverAgent {
 	List<Sender> senders = new CopyOnWriteArrayList<>();
 
 	long failureCountThreshold = 10;
-	
+
 	public static enum AppEventType {
-		STARTUP_INITIATED, STARTUP_COMPLETE, STARTUP_FAILED, SHUTDOWN_INITIATED, SHUTDOWN_COMPLETE, SHUTDOWN_FAILED, DEPLOY_INITIATED, DEPLOY_COMPLETE, DEPLOY_FAILED
+		GENERIC_MESSAGE, GENERIC_ERROR, STARTUP_INITIATED, STARTUP_COMPLETE, STARTUP_FAILED, SHUTDOWN_INITIATED, SHUTDOWN_COMPLETE, SHUTDOWN_FAILED, DEPLOY_INITIATED, DEPLOY_COMPLETE, DEPLOY_FAILED
 	}
 
 	public static interface Sender {
@@ -63,6 +66,9 @@ public class MacGyverAgent {
 	}
 
 	final void sendCheckIn(ObjectNode status) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("sendCheckIn {}",status);
+		}
 		for (Sender sender : senders) {
 			try {
 				sender.sendCheckIn(status);
@@ -74,6 +80,9 @@ public class MacGyverAgent {
 	}
 
 	final void sendThreadDump(ObjectNode status) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("sendThreadDump host={} appId={}",status.path("host").asText(),status.path("appId").asText());
+		}
 		for (Sender sender : senders) {
 
 			try {
@@ -86,6 +95,9 @@ public class MacGyverAgent {
 	}
 
 	final void sendAppEvent(ObjectNode n) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("sendAppEvent {}",n);
+		}
 		for (Sender sender : senders) {
 			try {
 				sender.sendAppEvent(n);
@@ -129,6 +141,44 @@ public class MacGyverAgent {
 				logger.warn("problem decorating", e);
 			}
 		}
+		scrubNonConformingAttributes(status);
+	}
+
+	protected boolean isConformingAttributeName(String name) {
+		if (name == null) {
+			return false;
+		}
+		if (name.length() < 1) {
+			return false;
+		}
+		if (!Character.isAlphabetic(name.charAt(0))) {
+			return false;
+		}
+		for (char c : name.toCharArray()) {
+			if (!Character.isJavaIdentifierPart(c)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	protected void scrubNonConformingAttributes(ObjectNode n) {
+		List<String> scrubList = new ArrayList<>();
+		Iterator<String> t = n.fieldNames();
+		while (t.hasNext()) {
+			String fieldName = t.next();
+			JsonNode val = n.get(fieldName);
+
+			if ((!isConformingAttributeName(fieldName)) ||
+					val.isContainerNode()) {
+				scrubList.add(fieldName);
+			}
+
+		}
+		scrubList.forEach(it -> {
+			n.remove(it);
+		});
+
 	}
 
 	public final void reportThreadDump() throws IOException {
@@ -236,7 +286,8 @@ public class MacGyverAgent {
 			logger.info("checkInInterval is <=0 -- check in reporting will be disabled");
 		} else {
 			logger.info("scheduling checkin every {} secs", TimeUnit.MILLISECONDS.toSeconds(checkInIntervalMillis));
-			scheduledExecutor.scheduleAtFixedRate(new ScheduledCheckInTask(), 0, checkInIntervalMillis, TimeUnit.MILLISECONDS);
+			scheduledExecutor.scheduleAtFixedRate(new ScheduledCheckInTask(), 0, checkInIntervalMillis,
+					TimeUnit.MILLISECONDS);
 		}
 
 		if (threadDumpIntervalMillis <= 0) {

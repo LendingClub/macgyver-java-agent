@@ -8,6 +8,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.macgyver.agent.MacGyverAgent.Sender;
@@ -63,12 +65,18 @@ public class MacGyverAgentTest {
 		
 		ObjectNode v = sender.last();
 		Assertions.assertThat(sender.last().get("host").asText()).isEqualTo(agent.getUnqualifiedHostname());
-		System.out.println(v);
+
 		
-		Assertions.assertThat(v.get("startTime").asText(null)).isNotNull();
-		Assertions.assertThat(v.get("os.name").asText(null)).isNotNull();
-		Assertions.assertThat(v.get("os.arch").asText(null)).isNotNull();
-		Assertions.assertThat(v.get("java.version").asText(null)).isNotNull();
-		Assertions.assertThat(v.get("java.home").asText(null)).isNotNull();
+		Assertions.assertThat(v.path("startTime").asText(null)).isNotNull();
+		Assertions.assertThat(v.path("osName").asText(null)).isNotNull();
+		Assertions.assertThat(v.get("osArch").asText(null)).isNotNull();
+		Assertions.assertThat(v.get("javaVersion").asText(null)).isNotNull();
+		Assertions.assertThat(v.get("javaHome").asText(null)).isNotNull();
+	}
+	
+	@Test
+	public void testMapper() {
+		ObjectMapper mapper = new ObjectMapper();
+		Assertions.assertThat(mapper.convertValue(50, JsonNode.class).intValue()).isEqualTo(50);
 	}
 }

@@ -78,9 +78,6 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 
 		try {
 			doInit();
-			if (logger.isDebugEnabled()) {
-				logger.debug("POST: {}", data);
-			}
 
 			if (okhttp == null) {
 				throw new NullPointerException("okhttp not initialized");
@@ -97,13 +94,16 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 							.url(url).build())
 					.execute();
 			int code = r.code();
+			if (logger.isDebugEnabled()) {
+				logger.debug("POST {} rc={}",url,code);
+			}
 			if (code != 200) {
 				throw new AgentException("POST " + url + " statusCode=" + code);
 
 			}
 			r.body().string(); // read the result
 		} catch (IOException e) {
-			throw new AgentException(e);
+			throw new AgentException("POST "+url,e);
 		}
 	}
 
