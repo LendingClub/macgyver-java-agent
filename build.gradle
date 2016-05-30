@@ -1,0 +1,135 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'maven'
+apply plugin: "jacoco"
+
+
+group 'io.macgyver'
+version = "1.0.0-RC1"
+
+
+configurations {
+	//all*.exclude group: 'org.codehaus.groovy', module: 'groovy'
+//	all*.exclude group: 'log4j'
+//	all*.exclude group: 'xml-apis'
+//	all*.exclude group: 'commons-logging'
+}
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+	jcenter()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+
+
+	compile "com.fasterxml.jackson.core:jackson-databind:${JACKSON_VERSION}"
+	compile "com.squareup.okhttp3:okhttp:${OKHTTP_VERSION}"
+	compile "org.slf4j:slf4j-api:${SLF4J_VERSION}"
+	
+    compileOnly 'com.amazonaws:aws-java-sdk-sns:1.10.77'
+    
+	testCompile "org.assertj:assertj-core:${ASSERTJ_VERSION}"  
+	testCompile "junit:junit:${JUNIT_VERSION}"
+	testCompile "com.squareup.okhttp3:mockwebserver:${OKHTTP_VERSION}"
+	testCompile "ch.qos.logback:logback-classic:${LOGBACK_VERSION}"
+	testCompile "org.slf4j:jul-to-slf4j:${SLF4J_VERSION}"
+    testCompile 'com.amazonaws:aws-java-sdk-sns:1.10.77'
+
+}
+
+task wrapper(type: Wrapper) {
+	gradleVersion = '2.13'
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+	
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+	
+	
+}
+
+artifacts {
+        archives sourcesJar, javadocJar
+}
+uploadArchives {
+    repositories {
+        mavenDeployer {
+			
+            name = 'macgyver-bintray'
+           
+			
+			if (!project.has('BINRAY_USER')) {
+				project.ext['BINTRAY_USER']=System.getenv("BINTRAY_USER")
+			}
+			if (!project.has('BINTRAY_KEY')) {
+				project.ext['BINTRAY_KEY'] = System.getenv("BINTRAY_KEY")
+			}
+				
+            repository(id: 'macgyver-bintray', url: 'https://api.bintray.com/maven/robschoening/io-macgyver/macgyver-java-agent'){
+                authentication(userName: BINTRAY_USER, password: BINTRAY_KEY)
+			}
+            pom.project {
+				
+				name 'macgyver-java-agent'
+				description 'Java Agent for MacGyver'
+				url 'https://github.com/LendingClub/macgyver-java-agent'
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+						distribution 'repo'
+                    }
+                }
+				scm {
+					connection 'scm:git:git@github.com:LendingClub/macgyver-java-agent.git'
+					developerConnection 'scm:git:git@github.com:LendingClub/macgyver-java-agent.git'
+					url 'git@github.com:LendingClub/macgyver-java-agent.git'
+				}
+            	developers {
+					developer {
+						name 'Rob Schoening'
+						email 'robschoening@gmail.com'
+					}
+				}
+            }
+        }
+    }
+}
+
+
+jacocoTestReport {
+    group = "reporting"
+    description = "Generate Jacoco coverage reports after running tests."
+    reports {
+        xml.enabled true
+        html.enabled true
+        csv.enabled false
+    }
+    //classDirectories = fileTree(dir: 'build/classes/main', include: 'com/thc/**')
+    //sourceDirectories = fileTree(dir: 'scr/java', include: 'com/thc/**')
+    additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
+}
+
+task (none) << {
+	// dummy task to do nothing
+}
+
+
+if (JavaVersion.current().isJava8Compatible()) {
+    allprojects {
+      tasks.withType(Javadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+      }
+    }
+}
