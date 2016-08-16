@@ -37,9 +37,9 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 	String checkInPath = DEFAULT_CHECK_IN_PATH;
 	String appEventPath = DEFAULT_APP_EVENT_PATH;
 	String threadDumpPath = DEFAULT_THREAD_DUMP_PATH;
-	String username=null;
-	String password=null;
-	
+	String username = null;
+	String password = null;
+
 	public HttpAgentSender withBaseUrl(String url) {
 		this.baseUrl = url;
 		while (baseUrl.endsWith("/")) {
@@ -71,39 +71,43 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 	}
 
 	public HttpAgentSender withCredentials(String username, String password) {
-		
+
 		return this;
 	}
+
 	private void post(String url, ObjectNode data) {
 
+		Response response = null;
 		try {
 			doInit();
 
 			if (okhttp == null) {
 				throw new NullPointerException("okhttp not initialized");
 			}
-		
+
 			Request.Builder requestBuilder = new Request.Builder().header("accept", "application/json");
-			if (username!=null && password!=null) {
+			if (username != null && password != null) {
 				requestBuilder = requestBuilder.addHeader("Authorization", Credentials.basic(username, password));
 			}
-			
-			Response r = okhttp
-					.newCall(requestBuilder
-							.post(RequestBody.create(MediaType.parse("application/json"), data.toString()))
-							.url(url).build())
+
+			response = okhttp.newCall(requestBuilder
+					.post(RequestBody.create(MediaType.parse("application/json"), data.toString())).url(url).build())
 					.execute();
-			int code = r.code();
+			int code = response.code();
+	
 			if (logger.isDebugEnabled()) {
-				logger.debug("POST {} rc={}",url,code);
+				logger.debug("POST {} rc={}", url, code);
 			}
 			if (code != 200) {
 				throw new AgentException("POST " + url + " statusCode=" + code);
-
 			}
-			r.body().string(); // read the result
+
 		} catch (IOException e) {
-			throw new AgentException("POST "+url,e);
+			throw new AgentException("POST " + url, e);
+		} finally {
+			if (response != null) {
+				response.body().close(); 
+			}
 		}
 	}
 
@@ -129,8 +133,6 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 		}
 
 	}
-
-
 
 	@Override
 	public void sendAppEvent(ObjectNode n) {

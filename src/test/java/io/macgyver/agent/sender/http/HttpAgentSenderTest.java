@@ -8,6 +8,7 @@ import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 
 import org.assertj.core.api.Assertions;
@@ -128,9 +129,7 @@ public class HttpAgentSenderTest {
 		}
 
 	}
-	
 
-	
 	@Test
 	public void test500Response() {
 		try {
@@ -139,11 +138,12 @@ public class HttpAgentSenderTest {
 			sender.sendAppEvent(mapper.createObjectNode());
 			Assertions.failBecauseExceptionWasNotThrown(AgentException.class);
 		} catch (Exception e) {
-			Assertions.assertThat(e).isInstanceOf(AgentException.class).hasMessageContaining("statusCode=500").hasMessageContaining("POST http://localhost:").hasMessageContaining("app-event");
-			
+			Assertions.assertThat(e).isInstanceOf(AgentException.class).hasMessageContaining("statusCode=500")
+					.hasMessageContaining("POST http://localhost:").hasMessageContaining("app-event");
+
 		}
 	}
-	
+
 	@Test
 	public void test403Response() {
 		try {
@@ -152,8 +152,42 @@ public class HttpAgentSenderTest {
 			sender.sendAppEvent(mapper.createObjectNode());
 			Assertions.failBecauseExceptionWasNotThrown(AgentException.class);
 		} catch (Exception e) {
-			Assertions.assertThat(e).isInstanceOf(AgentException.class).hasMessageContaining("statusCode=403").hasMessageContaining("POST http://localhost:").hasMessageContaining("app-event");
-			
+			Assertions.assertThat(e).isInstanceOf(AgentException.class).hasMessageContaining("statusCode=403")
+					.hasMessageContaining("POST http://localhost:").hasMessageContaining("app-event");
+
 		}
+	}
+
+	@Test
+	public void testCloseOnFailure() {
+		int count = 2100;
+	
+		HttpAgentSender sender = new HttpAgentSender().withBaseUrl(mockServer.url("/").toString());
+		for (int i = 0; i < count; i++) {
+			mockServer.enqueue(new MockResponse().setResponseCode(503).setBody(UUID.randomUUID().toString()));
+			try {
+				sender.sendAppEvent(mapper.createObjectNode());
+			} catch (Exception e) {
+				// ignore the exception
+			}
+		}
+
+	}
+	
+	@Test
+	public void testCloseOnSuccess() {
+		int count = 2100;
+	
+		HttpAgentSender sender = new HttpAgentSender().withBaseUrl(mockServer.url("/").toString());
+		for (int i = 0; i < count; i++) {
+			mockServer.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+			try {
+				
+				sender.sendAppEvent(mapper.createObjectNode());
+			} catch (Exception e) {
+				// ignore the exception
+			}
+		}
+
 	}
 }
