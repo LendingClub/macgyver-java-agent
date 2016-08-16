@@ -1,6 +1,7 @@
 # macgyver-java-agent
 
 [![CircleCI](https://circleci.com/gh/LendingClub/macgyver-java-agent.svg?style=svg)](https://circleci.com/gh/LendingClub/macgyver-java-agent)
+ [ ![Download](https://api.bintray.com/packages/robschoening/io-macgyver/macgyver-java-agent/images/download.svg) ](https://bintray.com/robschoening/io-macgyver/macgyver-java-agent/_latestVersion)
 
 This provides service discovery capability to JVM based apps.  The core class ```MacGyverAgent``` will report
 application status and thread dumps to the MacGyver service.
