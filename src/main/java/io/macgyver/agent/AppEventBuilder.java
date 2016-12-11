@@ -28,6 +28,14 @@ public class AppEventBuilder {
 		data.put("message", message);
 		return this;
 	}
+	public AppEventBuilder withIp(String ip) {
+		data.put("ip", ip);
+		return this;
+	}
+	public AppEventBuilder withDnsName(String dns) {
+		data.put("dnsName", dns);
+		return this;
+	}
 	public AppEventBuilder withHost(String host) {
 		data.put("host", host);
 		return this;

@@ -6,7 +6,7 @@ apply plugin: "jacoco"
 
 
 group 'io.macgyver'
-version = "1.0.1"
+version = "1.1.0"
 
 
 configurations {
@@ -32,19 +32,19 @@ dependencies {
 	compile "com.squareup.okhttp3:okhttp:${OKHTTP_VERSION}"
 	compile "org.slf4j:slf4j-api:${SLF4J_VERSION}"
 	
-    compileOnly 'com.amazonaws:aws-java-sdk-sns:1.10.77'
+    compileOnly 'com.amazonaws:aws-java-sdk-sns:1.11.66'
     
 	testCompile "org.assertj:assertj-core:${ASSERTJ_VERSION}"  
 	testCompile "junit:junit:${JUNIT_VERSION}"
 	testCompile "com.squareup.okhttp3:mockwebserver:${OKHTTP_VERSION}"
 	testCompile "ch.qos.logback:logback-classic:${LOGBACK_VERSION}"
 	testCompile "org.slf4j:jul-to-slf4j:${SLF4J_VERSION}"
-    testCompile 'com.amazonaws:aws-java-sdk-sns:1.10.77'
+    testCompile 'com.amazonaws:aws-java-sdk-sns:1.11.66'
 
 }
 
 task wrapper(type: Wrapper) {
-	gradleVersion = '2.14'
+	gradleVersion = '3.2.1'
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -69,10 +69,10 @@ uploadArchives {
             name = 'macgyver-bintray'
            
 			
-			if (!project.has('BINRAY_USER')) {
+			if (!project.hasProperty('BINRAY_USER')) {
 				project.ext['BINTRAY_USER']=System.getenv("BINTRAY_USER")
 			}
-			if (!project.has('BINTRAY_KEY')) {
+			if (!project.hasProperty('BINTRAY_KEY')) {
 				project.ext['BINTRAY_KEY'] = System.getenv("BINTRAY_KEY")
 			}
 				
@@ -121,9 +121,7 @@ jacocoTestReport {
     additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
 }
 
-task (none) << {
-	// dummy task to do nothing
-}
+
 
 
 if (JavaVersion.current().isJava8Compatible()) {

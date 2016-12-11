@@ -14,6 +14,8 @@ public class HostStatusDecorator implements StatusDecorator {
 	public void decorate(ObjectNode status) {
 
 		status.put("host",MacGyverAgent.getUnqualifiedHostname());
+		status.put("ip", MacGyverAgent.getHostIp());
+		status.put("dnsName",MacGyverAgent.getDnsName());
 	}
 
 }

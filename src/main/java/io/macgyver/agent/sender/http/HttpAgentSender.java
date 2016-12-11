@@ -25,6 +25,9 @@ import okhttp3.Response;
 public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 
 	Logger logger = LoggerFactory.getLogger(HttpAgentSender.class);
+
+	static OkHttpClient globalClient;
+
 	OkHttpClient okhttp;
 
 	List<Consumer<OkHttpClient.Builder>> configurators = new ArrayList<>();
@@ -94,7 +97,7 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 					.post(RequestBody.create(MediaType.parse("application/json"), data.toString())).url(url).build())
 					.execute();
 			int code = response.code();
-	
+
 			if (logger.isDebugEnabled()) {
 				logger.debug("POST {} rc={}", url, code);
 			}
@@ -106,7 +109,7 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 			throw new AgentException("POST " + url, e);
 		} finally {
 			if (response != null) {
-				response.body().close(); 
+				response.body().close();
 			}
 		}
 	}
@@ -123,9 +126,13 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 	}
 
 	protected void doInit() {
-
+		synchronized (HttpAgentSender.class) {
+			if (globalClient == null) {
+				globalClient = new OkHttpClient.Builder().build();
+			}
+		}
 		if (this.okhttp == null) {
-			Builder b = new OkHttpClient.Builder();
+			Builder b = globalClient.newBuilder();
 			for (Consumer<OkHttpClient.Builder> c : configurators) {
 				c.accept(b);
 			}

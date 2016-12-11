@@ -324,6 +324,24 @@ public class MacGyverAgent {
 
 	}
 
+	public static String getHostIp() {
+		try {
+			return InetAddress.getLocalHost().getHostAddress();
+		}
+		catch (UnknownHostException e) {
+			logger.warn("could not determine local ip");
+			return "127.0.0.1";
+		}
+	}
+	public static String getDnsName() {
+		try {
+			return InetAddress.getLocalHost().getHostName();
+		}
+		catch (UnknownHostException e) {
+			logger.warn("could not determine local hostname");
+			return "localhost";
+		}
+	}
 	public static String getUnqualifiedHostname() {
 		try {
 			String host = InetAddress.getLocalHost().getHostName();
