@@ -27,7 +27,7 @@ public class ThreadDump {
 	/**
 	 * Dumps all of the threads' current information to an output stream.
 	 *
-	 * @param out
+	 * @param w
 	 *            an output stream
 	 */
 	public void dump(Writer w) {
