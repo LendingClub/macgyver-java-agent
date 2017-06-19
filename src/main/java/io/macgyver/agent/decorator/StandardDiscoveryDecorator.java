@@ -79,6 +79,7 @@ public class StandardDiscoveryDecorator implements StatusDecorator {
 		}
 
 		safeSet(n, "startTime", x -> formatDate(agent.getStartTime()));
+		safeSet(n, "timestamp", x -> formatDate(new Date()));
 
 		n.put("osName", System.getProperty("os.name"));
 		n.put("osVersion", System.getProperty("os.version"));

@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+## Version 1.2.0
+
+_2017-06-119_
+
+ * Add reportAppConfigDump API
+
 ## Version 1.0.1
 
 _2016-08-15_

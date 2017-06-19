@@ -32,11 +32,13 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 	public static final String DEFAULT_CHECK_IN_PATH = "/api/cmdb/checkIn";
 	public static final String DEFAULT_APP_EVENT_PATH = "/api/cmdb/app-event";
 	public static final String DEFAULT_THREAD_DUMP_PATH = "/api/monitor/thread-dump";
+	public static final String DEFAULT_APP_CONFIG_DUMP_PATH = "/api/monitor/app-config-dump";
 
 	String baseUrl;
 	String checkInPath = DEFAULT_CHECK_IN_PATH;
 	String appEventPath = DEFAULT_APP_EVENT_PATH;
 	String threadDumpPath = DEFAULT_THREAD_DUMP_PATH;
+	String appConfigDumpPath = DEFAULT_APP_CONFIG_DUMP_PATH;
 	String username = null;
 	String password = null;
 
@@ -60,6 +62,10 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 
 	public String getThreadDumpUrl() {
 		return baseUrl + threadDumpPath;
+	}
+
+	public String getAppConfigDumpUrl() {
+		return baseUrl + appConfigDumpPath;
 	}
 
 	public String getAppEventUrl() {
@@ -114,6 +120,11 @@ public class HttpAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 	@Override
 	public void sendThreadDump(ObjectNode status) {
 		post(getThreadDumpUrl(), status);
+	}
+
+	@Override
+	public void sendAppConfigDump(ObjectNode n) {
+		post(getAppConfigDumpUrl(), n);
 	}
 
 	@Override

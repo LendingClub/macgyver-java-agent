@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPOutputStream;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +64,8 @@ public class MacGyverAgent {
 		public void sendCheckIn(ObjectNode n);
 
 		public void sendThreadDump(ObjectNode n);
+
+		public void sendAppConfigDump(ObjectNode n);
 	}
 
 	final void sendCheckIn(ObjectNode status) {
@@ -74,7 +77,7 @@ public class MacGyverAgent {
 				sender.sendCheckIn(status);
 				failureCount.set(0);
 			} catch (RuntimeException e) {
-				logSenderException(sender, e);
+				logSenderException(sender, MessageType.APP_CHECK_IN, e);
 			}
 		}
 	}
@@ -89,7 +92,7 @@ public class MacGyverAgent {
 				sender.sendThreadDump(status);
 				failureCount.set(0);
 			} catch (Exception e) {
-				logSenderException(sender, e);
+				logSenderException(sender, MessageType.THREAD_DUMP, e);
 			}
 		}
 	}
@@ -103,20 +106,35 @@ public class MacGyverAgent {
 				sender.sendAppEvent(n);
 				failureCount.set(0);
 			} catch (Exception e) {
-				logSenderException(sender, e);
+				logSenderException(sender, MessageType.APP_EVENT, e);
 			}
 		}
 	}
 
-	private void logSenderException(Sender sender, Exception e) {
+	final void sendAppConfigDump(ObjectNode n) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("sendAppConfigDump host={} appId={}", n.path("host").asText(), n.path("appId").asText());
+		}
+
+		for (Sender sender : senders) {
+			try {
+				sender.sendAppConfigDump(n);
+				failureCount.set(0);
+			} catch (Exception e) {
+				logSenderException(sender, MessageType.APP_CONFIG_DUMP, e);
+			}
+		}
+	}
+
+	private void logSenderException(Sender sender, MessageType type, Exception e) {
 		long count = failureCount.incrementAndGet();
 		if (logger.isDebugEnabled()) {
-			logger.debug("problem sending app event via " + sender, e);
+			logger.debug("problem sending " + type.name() + " via " + sender, e);
 		} else {
 			if (count < failureCountThreshold) {
-				logger.debug("problem sending app event via " + sender + ": " + e.toString());
+				logger.debug("problem sending " + type.name() + " via " + sender + ": " + e.toString());
 			} else {
-				logger.warn("problem sending app event via " + sender + ": " + e.toString());
+				logger.warn("problem sending " + type.name() + " via " + sender + ": " + e.toString());
 			}
 		}
 	}
@@ -124,7 +142,7 @@ public class MacGyverAgent {
 	protected AppMetadataProvider discovery;
 
 	public static enum MessageType {
-		APP_EVENT, APP_CHECK_IN, THREAD_DUMP
+		APP_EVENT, APP_CHECK_IN, THREAD_DUMP, APP_CONFIG_DUMP
 	}
 
 	public MacGyverAgent() {
@@ -200,6 +218,15 @@ public class MacGyverAgent {
 		status.put("threadDumpGzip", new String(baos.toByteArray()));
 		sendThreadDump(status);
 
+	}
+
+	public final void reportAppConfigDump(ArrayNode appConfigs) throws IOException {
+
+		ObjectNode appConfigDump = mapper.createObjectNode();
+		decorate(appConfigDump);
+		appConfigDump.set("appConfigs", appConfigs);
+
+		sendAppConfigDump(appConfigDump);
 	}
 
 	public final void reportCheckIn() {

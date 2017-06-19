@@ -1,33 +1,28 @@
 package io.macgyver.agent.sender.http;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.macgyver.agent.AgentException;
+import io.macgyver.agent.AppEventBuilder;
+import io.macgyver.agent.AppMetadataProvider;
+import io.macgyver.agent.MacGyverAgent;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import org.assertj.core.api.Assertions;
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
-
-import org.assertj.core.api.Assertions;
-import org.junit.Rule;
-import org.junit.Test;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.macgyver.agent.AgentException;
-import io.macgyver.agent.AppEventBuilder;
-
-import io.macgyver.agent.MacGyverAgent;
-import io.macgyver.agent.sender.http.HttpAgentSender;
-import okhttp3.Credentials;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 
 public class HttpAgentSenderTest {
 
@@ -118,6 +113,49 @@ public class HttpAgentSenderTest {
 	}
 
 	@Test
+	public void testAppConfigDump() throws InterruptedException, IOException {
+
+		MacGyverAgent agent = getAgentWithMetadata();
+		mockServer.enqueue(new MockResponse().setBody("{}"));
+		HttpAgentSender sender = new HttpAgentSender().withBaseUrl(mockServer.url("/").toString());
+
+		agent.withSender(sender);
+
+		ArrayNode appConfigs = mapper.createArrayNode();
+
+		ObjectNode config = mapper.createObjectNode();
+		config.put("config", "config1");
+		config.put("value", "value1");
+		appConfigs.add(config);
+
+		config = mapper.createObjectNode();
+		config.put("config", "config2");
+		config.put("value", "value2");
+		appConfigs.add(config);
+
+		agent.reportAppConfigDump(appConfigs);
+
+		RecordedRequest rr = mockServer.takeRequest();
+
+		Assertions.assertThat(rr.getRequestLine()).isEqualTo("POST /api/monitor/app-config-dump HTTP/1.1");
+
+		Assertions.assertThat(rr.getHeader("content-type")).contains("application/json");
+
+		JsonNode n = mapper.readTree(rr.getBody().readUtf8());
+
+		Assertions.assertThat(n.has("appId")).isTrue();
+		Assertions.assertThat(n.has("host")).isTrue();
+		Assertions.assertThat(n.has("timestamp")).isTrue();
+		Assertions.assertThat(n.has("appConfigs")).isTrue();
+
+		for (JsonNode appConfig : n.get("appConfigs")) {
+			Assertions.assertThat(appConfig.has("config")).isTrue();
+			Assertions.assertThat(appConfig.has("value")).isTrue();
+		}
+
+	}
+
+	@Test
 	public void testConnectException() {
 		try {
 			HttpAgentSender sender = new HttpAgentSender().withBaseUrl("http://localhost:34223");
@@ -189,5 +227,54 @@ public class HttpAgentSenderTest {
 			}
 		}
 
+	}
+
+	private MacGyverAgent getAgentWithMetadata() {
+		return new MacGyverAgent().withAppMetadataProvider(new AppMetadataProvider() {
+			@Override
+			public String getScmRevision() {
+				return null;
+			}
+
+			@Override
+			public String getScmBranch() {
+				return null;
+			}
+
+			@Override
+			public String getVersion() {
+				return "1.145.0-SNAPSHOT";
+			}
+
+			@Override
+			public String getAppId() {
+				return "test-app";
+			}
+
+			@Override
+			public String getEnvironment() {
+				return "local";
+			}
+
+			@Override
+			public String getSubEnvironment() {
+				return null;
+			}
+
+			@Override
+			public Date getBuildTime() {
+				return null;
+			}
+
+			@Override
+			public Date getDeployTime() {
+				return null;
+			}
+
+			@Override
+			public JsonNode getExtendedData() {
+				return null;
+			}
+		});
 	}
 }
