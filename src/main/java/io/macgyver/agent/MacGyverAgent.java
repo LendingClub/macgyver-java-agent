@@ -1,37 +1,30 @@
 package io.macgyver.agent;
 
+import com.amazonaws.util.StringUtils;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.macgyver.agent.decorator.HostStatusDecorator;
+import io.macgyver.agent.decorator.StandardDiscoveryDecorator;
+import io.macgyver.agent.decorator.StatusDecorator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
-
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import io.macgyver.agent.decorator.HostStatusDecorator;
-import io.macgyver.agent.decorator.StandardDiscoveryDecorator;
-import io.macgyver.agent.decorator.StatusDecorator;
 
 public class MacGyverAgent {
 
@@ -221,9 +214,15 @@ public class MacGyverAgent {
 	}
 
 	public final void reportAppConfigDump(ArrayNode appConfigs) throws IOException {
+		reportAppConfigDump(appConfigs, null);
+	}
+
+	public final void reportAppConfigDump(ArrayNode appConfigs, String extraScrubRegex) throws IOException {
 
 		ObjectNode appConfigDump = mapper.createObjectNode();
 		decorate(appConfigDump);
+
+		AppConfigScrubber.scrub(appConfigs, extraScrubRegex);
 		appConfigDump.set("appConfigs", appConfigs);
 
 		sendAppConfigDump(appConfigDump);

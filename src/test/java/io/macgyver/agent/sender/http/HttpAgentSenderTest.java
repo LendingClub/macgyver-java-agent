@@ -124,12 +124,12 @@ public class HttpAgentSenderTest {
 		ArrayNode appConfigs = mapper.createArrayNode();
 
 		ObjectNode config = mapper.createObjectNode();
-		config.put("config", "config1");
+		config.put("config", "MyConfig");
 		config.put("value", "value1");
 		appConfigs.add(config);
 
 		config = mapper.createObjectNode();
-		config.put("config", "config2");
+		config.put("config", "MyPassword");
 		config.put("value", "value2");
 		appConfigs.add(config);
 
@@ -148,10 +148,13 @@ public class HttpAgentSenderTest {
 		Assertions.assertThat(n.has("timestamp")).isTrue();
 		Assertions.assertThat(n.has("appConfigs")).isTrue();
 
-		for (JsonNode appConfig : n.get("appConfigs")) {
-			Assertions.assertThat(appConfig.has("config")).isTrue();
-			Assertions.assertThat(appConfig.has("value")).isTrue();
-		}
+		JsonNode appConfig = n.get("appConfigs").get(0);
+		Assertions.assertThat(appConfig.get("config").asText().equals("MyConfig"));
+		Assertions.assertThat(appConfig.get("config").asText().equals("value1"));
+
+		appConfig = n.get("appConfigs").get(1);
+		Assertions.assertThat(appConfig.get("config").asText().equals("MyPassword"));
+		Assertions.assertThat(appConfig.get("config").asText().equals("*****"));
 
 	}
 
@@ -233,12 +236,12 @@ public class HttpAgentSenderTest {
 		return new MacGyverAgent().withAppMetadataProvider(new AppMetadataProvider() {
 			@Override
 			public String getScmRevision() {
-				return null;
+				return "123456";
 			}
 
 			@Override
 			public String getScmBranch() {
-				return null;
+				return "release/145";
 			}
 
 			@Override
