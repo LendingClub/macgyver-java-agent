@@ -1,36 +1,30 @@
 package io.macgyver.agent;
 
+import com.amazonaws.util.StringUtils;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.macgyver.agent.decorator.HostStatusDecorator;
+import io.macgyver.agent.decorator.StandardDiscoveryDecorator;
+import io.macgyver.agent.decorator.StatusDecorator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import io.macgyver.agent.decorator.HostStatusDecorator;
-import io.macgyver.agent.decorator.StandardDiscoveryDecorator;
-import io.macgyver.agent.decorator.StatusDecorator;
 
 public class MacGyverAgent {
 
@@ -63,6 +57,8 @@ public class MacGyverAgent {
 		public void sendCheckIn(ObjectNode n);
 
 		public void sendThreadDump(ObjectNode n);
+
+		public void sendAppConfigDump(ObjectNode n);
 	}
 
 	final void sendCheckIn(ObjectNode status) {
@@ -74,7 +70,7 @@ public class MacGyverAgent {
 				sender.sendCheckIn(status);
 				failureCount.set(0);
 			} catch (RuntimeException e) {
-				logSenderException(sender, e);
+				logSenderException(sender, MessageType.APP_CHECK_IN, e);
 			}
 		}
 	}
@@ -89,7 +85,7 @@ public class MacGyverAgent {
 				sender.sendThreadDump(status);
 				failureCount.set(0);
 			} catch (Exception e) {
-				logSenderException(sender, e);
+				logSenderException(sender, MessageType.THREAD_DUMP, e);
 			}
 		}
 	}
@@ -103,20 +99,35 @@ public class MacGyverAgent {
 				sender.sendAppEvent(n);
 				failureCount.set(0);
 			} catch (Exception e) {
-				logSenderException(sender, e);
+				logSenderException(sender, MessageType.APP_EVENT, e);
 			}
 		}
 	}
 
-	private void logSenderException(Sender sender, Exception e) {
+	final void sendAppConfigDump(ObjectNode n) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("sendAppConfigDump host={} appId={}", n.path("host").asText(), n.path("appId").asText());
+		}
+
+		for (Sender sender : senders) {
+			try {
+				sender.sendAppConfigDump(n);
+				failureCount.set(0);
+			} catch (Exception e) {
+				logSenderException(sender, MessageType.APP_CONFIG_DUMP, e);
+			}
+		}
+	}
+
+	private void logSenderException(Sender sender, MessageType type, Exception e) {
 		long count = failureCount.incrementAndGet();
 		if (logger.isDebugEnabled()) {
-			logger.debug("problem sending app event via " + sender, e);
+			logger.debug("problem sending " + type.name() + " via " + sender, e);
 		} else {
 			if (count < failureCountThreshold) {
-				logger.debug("problem sending app event via " + sender + ": " + e.toString());
+				logger.debug("problem sending " + type.name() + " via " + sender + ": " + e.toString());
 			} else {
-				logger.warn("problem sending app event via " + sender + ": " + e.toString());
+				logger.warn("problem sending " + type.name() + " via " + sender + ": " + e.toString());
 			}
 		}
 	}
@@ -124,7 +135,7 @@ public class MacGyverAgent {
 	protected AppMetadataProvider discovery;
 
 	public static enum MessageType {
-		APP_EVENT, APP_CHECK_IN, THREAD_DUMP
+		APP_EVENT, APP_CHECK_IN, THREAD_DUMP, APP_CONFIG_DUMP
 	}
 
 	public MacGyverAgent() {
@@ -200,6 +211,21 @@ public class MacGyverAgent {
 		status.put("threadDumpGzip", new String(baos.toByteArray()));
 		sendThreadDump(status);
 
+	}
+
+	public final void reportAppConfigDump(ArrayNode appConfigs) throws IOException {
+		reportAppConfigDump(appConfigs, null);
+	}
+
+	public final void reportAppConfigDump(ArrayNode appConfigs, String extraScrubRegex) throws IOException {
+
+		ObjectNode appConfigDump = mapper.createObjectNode();
+		decorate(appConfigDump);
+
+		AppConfigScrubber.scrub(appConfigs, extraScrubRegex);
+		appConfigDump.set("appConfigs", appConfigs);
+
+		sendAppConfigDump(appConfigDump);
 	}
 
 	public final void reportCheckIn() {

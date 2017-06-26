@@ -27,6 +27,11 @@ public class MemorySender implements Sender {
 		eventList.add(n);
 	}
 
+	@Override
+	public void sendAppConfigDump(ObjectNode n) {
+		eventList.add(n);
+	}
+
 	ObjectNode last() {
 		return eventList.get(eventList.size()-1);
 	}

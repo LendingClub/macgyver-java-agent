@@ -75,6 +75,11 @@ public class SnsAgentSender implements io.macgyver.agent.MacGyverAgent.Sender {
 	}
 
 	@Override
+	public void sendAppConfigDump(ObjectNode appConfigs) {
+		send(MessageType.APP_CONFIG_DUMP, appConfigs);
+	}
+
+	@Override
 	public void sendAppEvent(ObjectNode n) {
 		send(MessageType.APP_EVENT,n);
 

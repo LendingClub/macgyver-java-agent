@@ -1,18 +1,13 @@
 package io.macgyver.agent;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.macgyver.agent.MacGyverAgent.Sender;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import io.macgyver.agent.MacGyverAgent.Sender;
 
 public class MacGyverAgentTest {
 
@@ -28,6 +23,11 @@ public class MacGyverAgentTest {
 			public void sendThreadDump(ObjectNode n) {
 				// TODO Auto-generated method stub
 
+			}
+
+			@Override
+			public void sendAppConfigDump(ObjectNode n) {
+				// TODO Auto-generated method stub
 			}
 
 			@Override
