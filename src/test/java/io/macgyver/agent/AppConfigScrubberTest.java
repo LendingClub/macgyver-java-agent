@@ -19,17 +19,17 @@ public class AppConfigScrubberTest {
         ArrayNode appConfigs = mapper.createArrayNode();
 
         ObjectNode config = mapper.createObjectNode();
-        config.put("config", "MyConfig");
+        config.put("key", "MyConfig");
         config.put("value", "value1");
         appConfigs.add(config);
 
         config = mapper.createObjectNode();
-        config.put("config", "MyPassword");
+        config.put("key", "MyPassword");
         config.put("value", "value2");
         appConfigs.add(config);
 
         config = mapper.createObjectNode();
-        config.put("config", "foobar");
+        config.put("key", "foobar");
         config.put("value", "value3");
         appConfigs.add(config);
 
@@ -37,16 +37,16 @@ public class AppConfigScrubberTest {
         AppConfigScrubber.scrub(appConfigs, null);
 
         JsonNode appConfig = appConfigs.get(0);
-        Assertions.assertThat(appConfig.get("config").asText().equals("MyConfig"));
-        Assertions.assertThat(appConfig.get("config").asText().equals("value1"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("MyConfig"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("value1"));
 
         appConfig = appConfigs.get(1);
-        Assertions.assertThat(appConfig.get("config").asText().equals("MyPassword"));
-        Assertions.assertThat(appConfig.get("config").asText().equals("*****"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("MyPassword"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("*****"));
 
         appConfig = appConfigs.get(2);
-        Assertions.assertThat(appConfig.get("config").asText().equals("foobar"));
-        Assertions.assertThat(appConfig.get("config").asText().equals("value3"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("foobar"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("value3"));
     }
 
     @Test
@@ -56,17 +56,17 @@ public class AppConfigScrubberTest {
         ArrayNode appConfigs = mapper.createArrayNode();
 
         ObjectNode config = mapper.createObjectNode();
-        config.put("config", "MyConfig");
+        config.put("key", "MyConfig");
         config.put("value", "value1");
         appConfigs.add(config);
 
         config = mapper.createObjectNode();
-        config.put("config", "MyPassword");
+        config.put("key", "MyPassword");
         config.put("value", "value2");
         appConfigs.add(config);
 
         config = mapper.createObjectNode();
-        config.put("config", "foobar");
+        config.put("key", "foobar");
         config.put("value", "value3");
         appConfigs.add(config);
 
@@ -74,15 +74,15 @@ public class AppConfigScrubberTest {
         AppConfigScrubber.scrub(appConfigs, ".*bar");
 
         JsonNode appConfig = appConfigs.get(0);
-        Assertions.assertThat(appConfig.get("config").asText().equals("MyConfig"));
-        Assertions.assertThat(appConfig.get("config").asText().equals("value1"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("MyConfig"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("value1"));
 
         appConfig = appConfigs.get(1);
-        Assertions.assertThat(appConfig.get("config").asText().equals("MyPassword"));
-        Assertions.assertThat(appConfig.get("config").asText().equals("*****"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("MyPassword"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("*****"));
 
         appConfig = appConfigs.get(2);
-        Assertions.assertThat(appConfig.get("config").asText().equals("foobar"));
-        Assertions.assertThat(appConfig.get("config").asText().equals("*****"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("foobar"));
+        Assertions.assertThat(appConfig.get("key").asText().equals("*****"));
     }
 }

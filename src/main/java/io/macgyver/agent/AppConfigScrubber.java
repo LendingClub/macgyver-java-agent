@@ -24,7 +24,7 @@ public class AppConfigScrubber {
         Pattern scrubPattern = Pattern.compile(scrubRegex, Pattern.CASE_INSENSITIVE);
 
         for (JsonNode appConfig : appConfigs) {
-            if (scrubPattern.matcher(appConfig.get("config").asText()).matches()) {
+            if (scrubPattern.matcher(appConfig.get("key").asText()).matches()) {
                 ((ObjectNode)appConfig).put("value", SCRUBBED_VALUE);
             }
         }
