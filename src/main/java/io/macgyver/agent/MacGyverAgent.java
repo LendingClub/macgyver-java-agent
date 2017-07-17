@@ -213,11 +213,11 @@ public class MacGyverAgent {
 
 	}
 
-	public final void reportAppConfigDump(ArrayNode appConfigs) throws IOException {
+	public void reportAppConfigDump(ArrayNode appConfigs) throws IOException {
 		reportAppConfigDump(appConfigs, null);
 	}
 
-	public final void reportAppConfigDump(ArrayNode appConfigs, String extraScrubRegex) throws IOException {
+	public void reportAppConfigDump(ArrayNode appConfigs, String extraScrubRegex) throws IOException {
 
 		ObjectNode appConfigDump = mapper.createObjectNode();
 		decorate(appConfigDump);

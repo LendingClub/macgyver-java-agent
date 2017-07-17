@@ -124,12 +124,12 @@ public class HttpAgentSenderTest {
 		ArrayNode appConfigs = mapper.createArrayNode();
 
 		ObjectNode config = mapper.createObjectNode();
-		config.put("config", "MyConfig");
+		config.put("key", "MyConfig");
 		config.put("value", "value1");
 		appConfigs.add(config);
 
 		config = mapper.createObjectNode();
-		config.put("config", "MyPassword");
+		config.put("key", "MyPassword");
 		config.put("value", "value2");
 		appConfigs.add(config);
 
@@ -149,12 +149,12 @@ public class HttpAgentSenderTest {
 		Assertions.assertThat(n.has("appConfigs")).isTrue();
 
 		JsonNode appConfig = n.get("appConfigs").get(0);
-		Assertions.assertThat(appConfig.get("config").asText().equals("MyConfig"));
-		Assertions.assertThat(appConfig.get("config").asText().equals("value1"));
+		Assertions.assertThat(appConfig.get("key").asText().equals("MyConfig"));
+		Assertions.assertThat(appConfig.get("key").asText().equals("value1"));
 
 		appConfig = n.get("appConfigs").get(1);
-		Assertions.assertThat(appConfig.get("config").asText().equals("MyPassword"));
-		Assertions.assertThat(appConfig.get("config").asText().equals("*****"));
+		Assertions.assertThat(appConfig.get("key").asText().equals("MyPassword"));
+		Assertions.assertThat(appConfig.get("key").asText().equals("*****"));
 
 	}
 
